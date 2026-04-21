@@ -45,7 +45,8 @@ Verify UEs List Contains Exactly
     ${json}=    Parse Response JSON    ${response}
     Length Should Be    ${json["ues"]}    ${3}
     FOR    ${ue_id}    IN    @{expected_ids}
-        List Should Contain Value    ${json["ues"]}    ${ue_id}
+        ${int_id}=    Convert To Integer    ${ue_id}
+        Should Contain    ${json["ues"]}    ${int_id}
     END
 
 Verify Bearer Lifecycle For UE
@@ -53,7 +54,9 @@ Verify Bearer Lifecycle For UE
     Create API Session
     Reset Simulator State
     Attach UE    ${ue_id}
-    ${add_resp}=    POST On Session    api    /ues/${ue_id}/bearers    json={"bearer_id": ${bearer_id}}
+    ${int_bearer}=    Convert To Integer    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${int_bearer}
+    ${add_resp}=    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
     Should Be Equal As Strings    ${add_resp.status_code}    200
     ${get_resp}=    GET On Session    api    /ues/${ue_id}
     Should Be Equal As Strings    ${get_resp.status_code}    200
@@ -70,7 +73,9 @@ Verify Bearer ID Above Max Is Rejected
     Create API Session
     Reset Simulator State
     Attach UE    ${ue_id}
-    ${response}=    POST On Session    api    /ues/${ue_id}/bearers    json={"bearer_id": ${bearer_id}}    expected_status=any
+    ${int_bearer}=    Convert To Integer    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${int_bearer}
+    ${response}=    POST On Session    api    /ues/${ue_id}/bearers    json=${body}    expected_status=any
     Should Be Equal As Strings    ${response.status_code}    422
 
 Create API Session
@@ -86,5 +91,6 @@ Reset Simulator State
 
 Attach UE
     [Arguments]    ${ue_id}
-    ${payload}=    Create Dictionary    ue_id=${ue_id}
-    POST On Session    api    /ues    json=${payload}
+    ${int_id}=    Convert To Integer    ${ue_id}
+    ${body}=    Create Dictionary    ue_id=${int_id}
+    POST On Session    api    /ues    json=${body}
