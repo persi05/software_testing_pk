@@ -1,6 +1,7 @@
 *** Settings ***
 Documentation    API tests for Simple EPC Simulator
 Library          RequestsLibrary
+Library          Collections
 
 *** Variables ***
 ${BASE_URL}    http://localhost:8000
@@ -25,6 +26,7 @@ Test Bearer ID Validation
 *** Keywords ***
 Verify UEs List Is Empty
     Create API Session
+    Reset Simulator State
     ${response}=    GET On Session    api    /ues
     Should Be Equal As Strings    ${response.status_code}    200
     ${json}=    Parse Response JSON    ${response}
@@ -84,4 +86,5 @@ Reset Simulator State
 
 Attach UE
     [Arguments]    ${ue_id}
-    POST On Session    api    /ues    json={"ue_id": ${ue_id}}
+    ${payload}=    Create Dictionary    ue_id=${ue_id}
+    POST On Session    api    /ues    json=${payload}

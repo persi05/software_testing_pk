@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.4.2 (Python 3.14.2 on win32)" generated="2026-04-21T19:26:03.164964" rpa="false" schemaversion="5">
+<suite id="s1" name="Api-Tests" source="C:\Users\patryk kox\Desktop\software_testing_pk\api-tests.robot">
+<test id="s1-t1" name="Test List UEs Initially Empty" line="9">
+<kw name="Verify UEs List Is Empty">
+<kw name="Create API Session">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.317384" level="INFO">Creating Session using : alias=api, url=http://localhost:8000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-04-21T19:26:03.317204" elapsed="0.000381"/>
+</kw>
+<status status="PASS" start="2026-04-21T19:26:03.316751" elapsed="0.000932"/>
+</kw>
+<kw name="Reset Simulator State">
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.357446" level="INFO">POST Request : url=http://localhost:8000/reset 
+ path_url=/reset 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '0'} 
+ body=None 
+ </msg>
+<msg time="2026-04-21T19:26:03.357589" level="INFO">POST Response : url=http://localhost:8000/reset 
+ status=200, reason=OK 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:01 GMT', 'server': 'uvicorn', 'content-length': '18', 'content-type': 'application/json'} 
+ body={"status":"reset"} 
+ </msg>
+<arg>api</arg>
+<arg>/reset</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.318176" elapsed="0.039503"/>
+</kw>
+<status status="PASS" start="2026-04-21T19:26:03.317914" elapsed="0.039862"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.378698" level="INFO">GET Request : url=http://localhost:8000/ues 
+ path_url=/ues 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive'} 
+ body=None 
+ </msg>
+<msg time="2026-04-21T19:26:03.378790" level="INFO">GET Response : url=http://localhost:8000/ues 
+ status=200, reason=OK 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:01 GMT', 'server': 'uvicorn', 'content-length': '10', 'content-type': 'application/json'} 
+ body={"ues":[]} 
+ </msg>
+<msg time="2026-04-21T19:26:03.378953" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/ues</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.357896" elapsed="0.021092"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-04-21T19:26:03.379870" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.379132" elapsed="0.000824"/>
+</kw>
+<kw name="Parse Response JSON">
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-04-21T19:26:03.381128" level="INFO">${json} = {'ues': []}</msg>
+<var>${json}</var>
+<arg>${response.json()}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.380467" elapsed="0.000697"/>
+</kw>
+<return>
+<value>${json}</value>
+<status status="PASS" start="2026-04-21T19:26:03.381230" elapsed="0.000053"/>
+</return>
+<msg time="2026-04-21T19:26:03.381445" level="INFO">${json} = {'ues': []}</msg>
+<var>${json}</var>
+<arg>${response}</arg>
+<status status="PASS" start="2026-04-21T19:26:03.380157" elapsed="0.001319"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-04-21T19:26:03.382206" level="INFO">${ues} = []</msg>
+<var>${ues}</var>
+<arg>${json["ues"]}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.381589" elapsed="0.000650"/>
+</kw>
+<kw name="Should Be Empty" owner="BuiltIn">
+<msg time="2026-04-21T19:26:03.382795" level="INFO">Length is 0.</msg>
+<arg>${ues}</arg>
+<doc>Verifies that the given item is empty.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.382346" elapsed="0.000508"/>
+</kw>
+<status status="PASS" start="2026-04-21T19:26:03.316376" elapsed="0.066546"/>
+</kw>
+<doc>Initinially List of UEs is empty</doc>
+<status status="PASS" start="2026-04-21T19:26:03.315481" elapsed="0.067708"/>
+</test>
+<test id="s1-t2" name="Test List Connected UEs" line="13">
+<kw name="Verify UEs List Contains Exactly">
+<kw name="Create API Session">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.385299" level="INFO">Creating Session using : alias=api, url=http://localhost:8000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-04-21T19:26:03.385143" elapsed="0.000352"/>
+</kw>
+<status status="PASS" start="2026-04-21T19:26:03.384908" elapsed="0.000683"/>
+</kw>
+<kw name="Reset Simulator State">
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.430949" level="INFO">POST Request : url=http://localhost:8000/reset 
+ path_url=/reset 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '0'} 
+ body=None 
+ </msg>
+<msg time="2026-04-21T19:26:03.431038" level="INFO">POST Response : url=http://localhost:8000/reset 
+ status=200, reason=OK 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:01 GMT', 'server': 'uvicorn', 'content-length': '18', 'content-type': 'application/json'} 
+ body={"status":"reset"} 
+ </msg>
+<arg>api</arg>
+<arg>/reset</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.385973" elapsed="0.045145"/>
+</kw>
+<status status="PASS" start="2026-04-21T19:26:03.385730" elapsed="0.045472"/>
+</kw>
+<for flavor="IN">
+<iter>
+<kw name="Attach UE">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-04-21T19:26:03.432648" level="INFO">${payload} = {'ue_id': '1'}</msg>
+<var>${payload}</var>
+<arg>ue_id=${ue_id}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.432052" elapsed="0.000636"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.547982" level="INFO">POST Request : url=http://localhost:8000/ues 
+ path_url=/ues 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '14', 'Content-Type': 'application/json'} 
+ body=b'{"ue_id": "1"}' 
+ </msg>
+<msg time="2026-04-21T19:26:03.548059" level="INFO">POST Response : url=http://localhost:8000/ues 
+ status=200, reason=OK 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:01 GMT', 'server': 'uvicorn', 'content-length': '31', 'content-type': 'application/json'} 
+ body={"status":"attached","ue_id":1} 
+ </msg>
+<arg>api</arg>
+<arg>/ues</arg>
+<arg>json=${payload}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.432816" elapsed="0.115342"/>
+</kw>
+<arg>${ue_id}</arg>
+<status status="PASS" start="2026-04-21T19:26:03.431636" elapsed="0.116606"/>
+</kw>
+<var name="${ue_id}">1</var>
+<status status="PASS" start="2026-04-21T19:26:03.431486" elapsed="0.116791"/>
+</iter>
+<iter>
+<kw name="Attach UE">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-04-21T19:26:03.549386" level="INFO">${payload} = {'ue_id': '5'}</msg>
+<var>${payload}</var>
+<arg>ue_id=${ue_id}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.548987" elapsed="0.000430"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.582407" level="INFO">POST Request : url=http://localhost:8000/ues 
+ path_url=/ues 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '14', 'Content-Type': 'application/json'} 
+ body=b'{"ue_id": "5"}' 
+ </msg>
+<msg time="2026-04-21T19:26:03.582486" level="INFO">POST Response : url=http://localhost:8000/ues 
+ status=200, reason=OK 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:01 GMT', 'server': 'uvicorn', 'content-length': '31', 'content-type': 'application/json'} 
+ body={"status":"attached","ue_id":5} 
+ </msg>
+<arg>api</arg>
+<arg>/ues</arg>
+<arg>json=${payload}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.549544" elapsed="0.033028"/>
+</kw>
+<arg>${ue_id}</arg>
+<status status="PASS" start="2026-04-21T19:26:03.548627" elapsed="0.034028"/>
+</kw>
+<var name="${ue_id}">5</var>
+<status status="PASS" start="2026-04-21T19:26:03.548422" elapsed="0.034265"/>
+</iter>
+<iter>
+<kw name="Attach UE">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-04-21T19:26:03.583691" level="INFO">${payload} = {'ue_id': '20'}</msg>
+<var>${payload}</var>
+<arg>ue_id=${ue_id}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.583301" elapsed="0.000420"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.664391" level="INFO">POST Request : url=http://localhost:8000/ues 
+ path_url=/ues 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '15', 'Content-Type': 'application/json'} 
+ body=b'{"ue_id": "20"}' 
+ </msg>
+<msg time="2026-04-21T19:26:03.664488" level="INFO">POST Response : url=http://localhost:8000/ues 
+ status=200, reason=OK 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:02 GMT', 'server': 'uvicorn', 'content-length': '32', 'content-type': 'application/json'} 
+ body={"status":"attached","ue_id":20} 
+ </msg>
+<arg>api</arg>
+<arg>/ues</arg>
+<arg>json=${payload}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.583819" elapsed="0.080777"/>
+</kw>
+<arg>${ue_id}</arg>
+<status status="PASS" start="2026-04-21T19:26:03.582985" elapsed="0.081720"/>
+</kw>
+<var name="${ue_id}">20</var>
+<status status="PASS" start="2026-04-21T19:26:03.582824" elapsed="0.081925"/>
+</iter>
+<var>${ue_id}</var>
+<value>@{expected_ids}</value>
+<status status="PASS" start="2026-04-21T19:26:03.431271" elapsed="0.233528"/>
+</for>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.670351" level="INFO">GET Request : url=http://localhost:8000/ues 
+ path_url=/ues 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive'} 
+ body=None 
+ </msg>
+<msg time="2026-04-21T19:26:03.670543" level="INFO">GET Response : url=http://localhost:8000/ues 
+ status=200, reason=OK 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:02 GMT', 'server': 'uvicorn', 'content-length': '16', 'content-type': 'application/json'} 
+ body={"ues":[1,5,20]} 
+ </msg>
+<msg time="2026-04-21T19:26:03.670923" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/ues</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.664999" elapsed="0.005983"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-04-21T19:26:03.672008" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.671184" elapsed="0.000942"/>
+</kw>
+<kw name="Parse Response JSON">
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-04-21T19:26:03.673627" level="INFO">${json} = {'ues': [1, 5, 20]}</msg>
+<var>${json}</var>
+<arg>${response.json()}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.672747" elapsed="0.000928"/>
+</kw>
+<return>
+<value>${json}</value>
+<status status="PASS" start="2026-04-21T19:26:03.673759" elapsed="0.000097"/>
+</return>
+<msg time="2026-04-21T19:26:03.674052" level="INFO">${json} = {'ues': [1, 5, 20]}</msg>
+<var>${json}</var>
+<arg>${response}</arg>
+<status status="PASS" start="2026-04-21T19:26:03.672370" elapsed="0.001719"/>
+</kw>
+<kw name="Length Should Be" owner="BuiltIn">
+<msg time="2026-04-21T19:26:03.675325" level="INFO">Length is 3.</msg>
+<arg>${json["ues"]}</arg>
+<arg>${3}</arg>
+<doc>Verifies that the length of the given item is correct.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.674231" elapsed="0.001174"/>
+</kw>
+<for flavor="IN">
+<iter>
+<kw name="List Should Contain Value">
+<msg time="2026-04-21T19:26:03.676995" level="FAIL">No keyword with name 'List Should Contain Value' found.</msg>
+<arg>${json["ues"]}</arg>
+<arg>${ue_id}</arg>
+<status status="FAIL" start="2026-04-21T19:26:03.676937" elapsed="0.000123">No keyword with name 'List Should Contain Value' found.</status>
+</kw>
+<var name="${ue_id}">1</var>
+<status status="FAIL" start="2026-04-21T19:26:03.675732" elapsed="0.001441">No keyword with name 'List Should Contain Value' found.</status>
+</iter>
+<var>${ue_id}</var>
+<value>@{expected_ids}</value>
+<status status="FAIL" start="2026-04-21T19:26:03.675515" elapsed="0.001751">No keyword with name 'List Should Contain Value' found.</status>
+</for>
+<arg>1</arg>
+<arg>5</arg>
+<arg>20</arg>
+<status status="FAIL" start="2026-04-21T19:26:03.384568" elapsed="0.292862">No keyword with name 'List Should Contain Value' found.</status>
+</kw>
+<doc>After attaching 3 UEs, returns exactly those IDs</doc>
+<status status="FAIL" start="2026-04-21T19:26:03.383810" elapsed="0.321191">No keyword with name 'List Should Contain Value' found.</status>
+</test>
+<test id="s1-t3" name="Test Bearer Lifecycle" line="17">
+<kw name="Verify Bearer Lifecycle For UE">
+<kw name="Create API Session">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.711775" level="INFO">Creating Session using : alias=api, url=http://localhost:8000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-04-21T19:26:03.711624" elapsed="0.000316"/>
+</kw>
+<status status="PASS" start="2026-04-21T19:26:03.711370" elapsed="0.000649"/>
+</kw>
+<kw name="Reset Simulator State">
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.815306" level="INFO">POST Request : url=http://localhost:8000/reset 
+ path_url=/reset 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '0'} 
+ body=None 
+ </msg>
+<msg time="2026-04-21T19:26:03.815384" level="INFO">POST Response : url=http://localhost:8000/reset 
+ status=200, reason=OK 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:02 GMT', 'server': 'uvicorn', 'content-length': '18', 'content-type': 'application/json'} 
+ body={"status":"reset"} 
+ </msg>
+<arg>api</arg>
+<arg>/reset</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.712453" elapsed="0.103026"/>
+</kw>
+<status status="PASS" start="2026-04-21T19:26:03.712155" elapsed="0.103405"/>
+</kw>
+<kw name="Attach UE">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-04-21T19:26:03.816733" level="INFO">${payload} = {'ue_id': '1'}</msg>
+<var>${payload}</var>
+<arg>ue_id=${ue_id}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.816261" elapsed="0.000596"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.833606" level="INFO">POST Request : url=http://localhost:8000/ues 
+ path_url=/ues 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '14', 'Content-Type': 'application/json'} 
+ body=b'{"ue_id": "1"}' 
+ </msg>
+<msg time="2026-04-21T19:26:03.833681" level="INFO">POST Response : url=http://localhost:8000/ues 
+ status=200, reason=OK 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:02 GMT', 'server': 'uvicorn', 'content-length': '31', 'content-type': 'application/json'} 
+ body={"status":"attached","ue_id":1} 
+ </msg>
+<arg>api</arg>
+<arg>/ues</arg>
+<arg>json=${payload}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.817057" elapsed="0.016702"/>
+</kw>
+<arg>${ue_id}</arg>
+<status status="PASS" start="2026-04-21T19:26:03.815789" elapsed="0.018071"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.884927" level="INFO">POST Request : url=http://localhost:8000/ues/1/bearers 
+ path_url=/ues/1/bearers 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '20', 'Content-Type': 'application/json'} 
+ body=b'"{\\"bearer_id\\": 5}"' 
+ </msg>
+<msg time="2026-04-21T19:26:03.885014" level="INFO">POST Response : url=http://localhost:8000/ues/1/bearers 
+ status=422, reason=Unprocessable Entity 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:02 GMT', 'server': 'uvicorn', 'content-length': '165', 'content-type': 'application/json'} 
+ body={"detail":[{"type":"model_attributes_type","loc":["body"],"msg":"Input should be a valid dictionary or object to extract fields from","input":"{\"bearer_id\": 5}"}]} 
+ </msg>
+<msg time="2026-04-21T19:26:03.885168" level="FAIL">HTTPError: 422 Client Error: Unprocessable Entity for url: http://localhost:8000/ues/1/bearers</msg>
+<var>${add_resp}</var>
+<arg>api</arg>
+<arg>/ues/${ue_id}/bearers</arg>
+<arg>json={"bearer_id": ${bearer_id}}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="FAIL" start="2026-04-21T19:26:03.833978" elapsed="0.053746">HTTPError: 422 Client Error: Unprocessable Entity for url: http://localhost:8000/ues/1/bearers</status>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${add_resp.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="NOT RUN" start="2026-04-21T19:26:03.887912" elapsed="0.000032"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<var>${get_resp}</var>
+<arg>api</arg>
+<arg>/ues/${ue_id}</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="NOT RUN" start="2026-04-21T19:26:03.888048" elapsed="0.000022"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${get_resp.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="NOT RUN" start="2026-04-21T19:26:03.888160" elapsed="0.000021"/>
+</kw>
+<kw name="Parse Response JSON">
+<var>${json}</var>
+<arg>${get_resp}</arg>
+<status status="NOT RUN" start="2026-04-21T19:26:03.888343" elapsed="0.000025"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>"${bearer_id}" in $json["bearers"]</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="NOT RUN" start="2026-04-21T19:26:03.888459" elapsed="0.000021"/>
+</kw>
+<kw name="DELETE On Session" owner="RequestsLibrary">
+<var>${del_resp}</var>
+<arg>api</arg>
+<arg>/ues/${ue_id}/bearers/${bearer_id}</arg>
+<doc>Sends a DELETE request on a previously created HTTP Session.</doc>
+<status status="NOT RUN" start="2026-04-21T19:26:03.888561" elapsed="0.000019"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${del_resp.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="NOT RUN" start="2026-04-21T19:26:03.888661" elapsed="0.000019"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<var>${get_after}</var>
+<arg>api</arg>
+<arg>/ues/${ue_id}</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="NOT RUN" start="2026-04-21T19:26:03.888758" elapsed="0.000019"/>
+</kw>
+<kw name="Parse Response JSON">
+<var>${json_after}</var>
+<arg>${get_after}</arg>
+<status status="NOT RUN" start="2026-04-21T19:26:03.888910" elapsed="0.000023"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>"${bearer_id}" not in $json_after["bearers"]</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="NOT RUN" start="2026-04-21T19:26:03.889017" elapsed="0.000025"/>
+</kw>
+<arg>1</arg>
+<arg>5</arg>
+<status status="FAIL" start="2026-04-21T19:26:03.710784" elapsed="0.178378">HTTPError: 422 Client Error: Unprocessable Entity for url: http://localhost:8000/ues/1/bearers</status>
+</kw>
+<doc>Bearer can be added and removed</doc>
+<status status="FAIL" start="2026-04-21T19:26:03.706177" elapsed="0.183336">HTTPError: 422 Client Error: Unprocessable Entity for url: http://localhost:8000/ues/1/bearers</status>
+</test>
+<test id="s1-t4" name="Test Bearer ID Validation" line="21">
+<kw name="Verify Bearer ID Above Max Is Rejected">
+<kw name="Create API Session">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.891300" level="INFO">Creating Session using : alias=api, url=http://localhost:8000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-04-21T19:26:03.891168" elapsed="0.000281"/>
+</kw>
+<status status="PASS" start="2026-04-21T19:26:03.890976" elapsed="0.000539"/>
+</kw>
+<kw name="Reset Simulator State">
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:03.947579" level="INFO">POST Request : url=http://localhost:8000/reset 
+ path_url=/reset 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '0'} 
+ body=None 
+ </msg>
+<msg time="2026-04-21T19:26:03.947673" level="INFO">POST Response : url=http://localhost:8000/reset 
+ status=200, reason=OK 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:02 GMT', 'server': 'uvicorn', 'content-length': '18', 'content-type': 'application/json'} 
+ body={"status":"reset"} 
+ </msg>
+<arg>api</arg>
+<arg>/reset</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.891813" elapsed="0.055932"/>
+</kw>
+<status status="PASS" start="2026-04-21T19:26:03.891621" elapsed="0.056202"/>
+</kw>
+<kw name="Attach UE">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-04-21T19:26:03.948733" level="INFO">${payload} = {'ue_id': '1'}</msg>
+<var>${payload}</var>
+<arg>ue_id=${ue_id}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.948317" elapsed="0.000447"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:04.011633" level="INFO">POST Request : url=http://localhost:8000/ues 
+ path_url=/ues 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '14', 'Content-Type': 'application/json'} 
+ body=b'{"ue_id": "1"}' 
+ </msg>
+<msg time="2026-04-21T19:26:04.011834" level="INFO">POST Response : url=http://localhost:8000/ues 
+ status=200, reason=OK 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:02 GMT', 'server': 'uvicorn', 'content-length': '31', 'content-type': 'application/json'} 
+ body={"status":"attached","ue_id":1} 
+ </msg>
+<arg>api</arg>
+<arg>/ues</arg>
+<arg>json=${payload}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-04-21T19:26:03.948879" elapsed="0.063117"/>
+</kw>
+<arg>${ue_id}</arg>
+<status status="PASS" start="2026-04-21T19:26:03.947977" elapsed="0.064178"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-04-21T19:26:04.062827" level="INFO">POST Request : url=http://localhost:8000/ues/1/bearers 
+ path_url=/ues/1/bearers 
+ headers={'User-Agent': 'python-requests/2.32.5', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '21', 'Content-Type': 'application/json'} 
+ body=b'"{\\"bearer_id\\": 10}"' 
+ </msg>
+<msg time="2026-04-21T19:26:04.062972" level="INFO">POST Response : url=http://localhost:8000/ues/1/bearers 
+ status=422, reason=Unprocessable Entity 
+ headers={'date': 'Tue, 21 Apr 2026 17:26:02 GMT', 'server': 'uvicorn', 'content-length': '166', 'content-type': 'application/json'} 
+ body={"detail":[{"type":"model_attributes_type","loc":["body"],"msg":"Input should be a valid dictionary or object to extract fields from","input":"{\"bearer_id\": 10}"}]} 
+ </msg>
+<msg time="2026-04-21T19:26:04.063240" level="INFO">${response} = &lt;Response [422]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/ues/${ue_id}/bearers</arg>
+<arg>json={"bearer_id": ${bearer_id}}</arg>
+<arg>expected_status=any</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-04-21T19:26:04.012377" elapsed="0.050925"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-04-21T19:26:04.064724" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>422</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-04-21T19:26:04.063559" elapsed="0.001359"/>
+</kw>
+<arg>1</arg>
+<arg>10</arg>
+<status status="PASS" start="2026-04-21T19:26:03.890676" elapsed="0.174417"/>
+</kw>
+<doc>Bearer ID 10 exceeds maximum of 9, expect error 422</doc>
+<status status="PASS" start="2026-04-21T19:26:03.890232" elapsed="0.175346"/>
+</test>
+<doc>API tests for Simple EPC Simulator</doc>
+<status status="FAIL" start="2026-04-21T19:26:03.166862" elapsed="0.900392"/>
+</suite>
+<statistics>
+<total>
+<stat pass="2" fail="2" skip="0">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat name="Api-Tests" id="s1" pass="2" fail="2" skip="0">Api-Tests</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>
