@@ -14,6 +14,10 @@ Test List Connected UEs
     [Documentation]    After attaching 3 UEs, returns exactly those IDs
     Verify UEs List Contains Exactly    1    5    20
 
+Test Bearer Lifecycle
+    [Documentation]    Bearer can be added and removed
+    Verify Bearer Lifecycle For UE    1    5
+
 *** Keywords ***
 Verify UEs List Is Empty
     Create API Session
@@ -37,6 +41,23 @@ Verify UEs List Contains Exactly
     FOR    ${ue_id}    IN    @{expected_ids}
         List Should Contain Value    ${json["ues"]}    ${ue_id}
     END
+
+Verify Bearer Lifecycle For UE
+    [Arguments]    ${ue_id}    ${bearer_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${add_resp}=    POST On Session    api    /ues/${ue_id}/bearers    json={"bearer_id": ${bearer_id}}
+    Should Be Equal As Strings    ${add_resp.status_code}    200
+    ${get_resp}=    GET On Session    api    /ues/${ue_id}
+    Should Be Equal As Strings    ${get_resp.status_code}    200
+    ${json}=    Parse Response JSON    ${get_resp}
+    Should Be True    "${bearer_id}" in $json["bearers"]
+    ${del_resp}=    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}
+    Should Be Equal As Strings    ${del_resp.status_code}    200
+    ${get_after}=    GET On Session    api    /ues/${ue_id}
+    ${json_after}=    Parse Response JSON    ${get_after}
+    Should Be True    "${bearer_id}" not in $json_after["bearers"]
 
 Create API Session
     Create Session    api    ${BASE_URL}
