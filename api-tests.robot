@@ -18,6 +18,10 @@ Test Bearer Lifecycle
     [Documentation]    Bearer can be added and removed
     Verify Bearer Lifecycle For UE    1    5
 
+Test Bearer ID Validation
+    [Documentation]    Bearer ID 10 exceeds maximum of 9, expect error 422
+    Verify Bearer ID Above Max Is Rejected    1    10
+
 *** Keywords ***
 Verify UEs List Is Empty
     Create API Session
@@ -58,6 +62,14 @@ Verify Bearer Lifecycle For UE
     ${get_after}=    GET On Session    api    /ues/${ue_id}
     ${json_after}=    Parse Response JSON    ${get_after}
     Should Be True    "${bearer_id}" not in $json_after["bearers"]
+
+Verify Bearer ID Above Max Is Rejected
+    [Arguments]    ${ue_id}    ${bearer_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${response}=    POST On Session    api    /ues/${ue_id}/bearers    json={"bearer_id": ${bearer_id}}    expected_status=any
+    Should Be Equal As Strings    ${response.status_code}    422
 
 Create API Session
     Create Session    api    ${BASE_URL}
