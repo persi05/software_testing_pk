@@ -47,6 +47,18 @@ Test UE Stats Reflect Attached UEs
     [Documentation]    GET /ues/stats returns correct ue_count after attaching UEs
     Verify Stats UE Count After Attach    2    3
 
+Test Bearer Operations On Nonexistent UE
+    [Documentation]    Bearer POST on UE that was never attached should return 404 or 422
+    Verify Bearer Operations On Nonexistent UE    99    1
+
+Test Full Traffic End To End
+    [Documentation]    Attach UE, add Bearer, start traffic, wait, check stats have duration>0 and nonzero bps, stop traffic
+    Verify Full Traffic End To End    1    1
+
+Test Traffic Protocol Validation
+    [Documentation]    Protocol "icmp" does not match ^(tcp|udp)$, expect 422
+    Verify Traffic Protocol Validation    1    1    icmp
+
 *** Keywords ***
 Verify UEs List Is Empty
     Create API Session
@@ -183,3 +195,54 @@ Verify Stats UE Count After Attach
     Should Be Equal As Strings    ${resp.status_code}    200
     ${json}=    Parse Response JSON    ${resp}
     Should Be Equal As Integers    ${json["ue_count"]}    ${attach_count}
+
+Verify Bearer Operations On Nonexistent UE
+    [Arguments]    ${ue_id}    ${bearer_id}
+    Create API Session
+    Reset Simulator State
+    ${int_bearer}=    Convert To Integer    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${int_bearer}
+    ${response}=    POST On Session    api    /ues/${ue_id}/bearers    json=${body}    expected_status=any
+    Should Be Equal As Strings    ${response.status_code}    422
+    ...    msg=Bearer POST on nonexistent UE should return 422
+    
+Verify Full Traffic End To End
+    [Arguments]    ${ue_id}    ${bearer_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${int_bearer}=    Convert To Integer    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${int_bearer}
+    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
+    ${traffic_body}=    Create Dictionary    protocol=tcp    kbps=${10000}
+    ${start_resp}=    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic_body}
+    Should Be Equal As Strings    ${start_resp.status_code}    200    msg=Start traffic should return 200
+    Sleep    3s
+    ${stats_resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
+    Should Be Equal As Strings    ${stats_resp.status_code}    200    msg=Traffic stats should return 200
+    ${stats_json}=    Parse Response JSON    ${stats_resp}
+    Dictionary Should Contain Key    ${stats_json}    duration
+    Dictionary Should Contain Key    ${stats_json}    tx_bps
+    Dictionary Should Contain Key    ${stats_json}    rx_bps
+    Should Be True    ${stats_json["duration"]} > 0    msg=Traffic duration should be greater than 0
+    Should Be True    ${stats_json["tx_bps"]} > 0    msg=tx_bps should be nonzero after traffic is running
+    Should Be True    ${stats_json["rx_bps"]} > 0    msg=rx_bps should be nonzero after traffic is running
+    ${stop_resp}=    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
+    Should Be Equal As Strings    ${stop_resp.status_code}    200    msg=Stop traffic should return 200
+    ${stop_json}=    Parse Response JSON    ${stop_resp}
+    Should Be Equal As Integers    ${stop_json["ue_id"]}    ${ue_id}
+    Should Be Equal As Integers    ${stop_json["bearer_id"]}    ${bearer_id}
+
+Verify Traffic Protocol Validation
+    [Arguments]    ${ue_id}    ${bearer_id}    ${invalid_protocol}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${int_bearer}=    Convert To Integer    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${int_bearer}
+    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
+    ${traffic_body}=    Create Dictionary    protocol=${invalid_protocol}    kbps=${100}
+    ${response}=    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
+    ...    json=${traffic_body}    expected_status=any
+    Should Be Equal As Strings    ${response.status_code}    422
+    ...    msg=Unsupported protocol "${invalid_protocol}" should return 422 Validation Error
