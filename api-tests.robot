@@ -23,6 +23,22 @@ Test Bearer ID Validation
     [Documentation]    Bearer ID 10 exceeds maximum of 9, expect error 422
     Verify Bearer ID Above Max Is Rejected    1    10
 
+Test Attach And Detach UE
+    [Documentation]    Test correct UE connection and disconnection (Attach & Detach)
+    Verify UE Attach And Detach    10
+
+Test Attach UE With ID of Minimum
+    [Documentation]    Test UE attachment and detachment with minimum valid ID (0)
+    Verify UE Attach And Detach    0
+
+Test Attach UE With ID Below Minimum
+    [Documentation]    Test validation of UE ID below minimum (0)
+    Verify UE Attach With Invalid ID    -1
+
+Test Attach UE With ID Above Maximum
+    [Documentation]    Test validation of UE ID above maximum (101)
+    Verify UE Attach With Invalid ID    101
+
 *** Keywords ***
 Verify UEs List Is Empty
     Create API Session
@@ -94,3 +110,30 @@ Attach UE
     ${int_id}=    Convert To Integer    ${ue_id}
     ${body}=    Create Dictionary    ue_id=${int_id}
     POST On Session    api    /ues    json=${body}
+
+Verify UE Attach And Detach
+    [Arguments]    ${ue_id}
+    Create API Session
+    Reset Simulator State
+    # Attach UE and verify response
+    ${int_id}=    Convert To Integer    ${ue_id}
+    ${body}=    Create Dictionary    ue_id=${int_id}
+    ${attach_response}=    POST On Session    api    /ues    json=${body}
+    Should Be Equal As Strings    ${attach_response.status_code}    200    msg=Attach request should return 200 OK
+    ${attach_json}=    Parse Response JSON    ${attach_response}
+    Should Be Equal As Integers    ${attach_json["ue_id"]}    ${ue_id}    msg=Response should contain correct UE ID
+    # Detach UE and verify response
+    ${detach_response}=    DELETE On Session    api    /ues/${ue_id}
+    Should Be Equal As Strings    ${detach_response.status_code}    200    msg=Detach request should return 200 OK
+    ${detach_json}=    Parse Response JSON    ${detach_response}
+    Should Be Equal As Integers    ${detach_json["ue_id"]}    ${ue_id}    msg=Response should contain correct UE ID
+
+Verify UE Attach With Invalid ID
+    [Documentation]    Verify UE attach validation: IDs outside range 1-100 should return 422 Validation Error
+    [Arguments]    ${invalid_ue_id}
+    Create API Session
+    Reset Simulator State
+    ${int_id}=    Convert To Integer    ${invalid_ue_id}
+    ${body}=    Create Dictionary    ue_id=${int_id}
+    ${response}=    POST On Session    api    /ues    json=${body}    expected_status=any
+    Should Be Equal As Strings    ${response.status_code}    422    msg=Invalid UE ID should return 422 Validation Error
