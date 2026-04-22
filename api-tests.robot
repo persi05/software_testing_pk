@@ -39,6 +39,14 @@ Test Attach UE With ID Above Maximum
     [Documentation]    Test validation of UE ID above maximum (101)
     Verify UE Attach With Invalid ID    101
 
+Test Traffic Lifecycle
+    [Documentation]    Traffic can be started on a bearer and stopped; stats are available while running
+    Verify Traffic Lifecycle For UE And Bearer    1    1
+
+Test UE Stats Reflect Attached UEs
+    [Documentation]    GET /ues/stats returns correct ue_count after attaching UEs
+    Verify Stats UE Count After Attach    2    3
+
 *** Keywords ***
 Verify UEs List Is Empty
     Create API Session
@@ -137,3 +145,41 @@ Verify UE Attach With Invalid ID
     ${body}=    Create Dictionary    ue_id=${int_id}
     ${response}=    POST On Session    api    /ues    json=${body}    expected_status=any
     Should Be Equal As Strings    ${response.status_code}    422    msg=Invalid UE ID should return 422 Validation Error
+
+Verify Traffic Lifecycle For UE And Bearer
+    [Arguments]    ${ue_id}    ${bearer_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${int_bearer}=    Convert To Integer    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${int_bearer}
+    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
+    ${traffic_body}=    Create Dictionary    protocol=tcp    kbps=${100}
+    ${start_resp}=    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic_body}
+    Should Be Equal As Strings    ${start_resp.status_code}    200
+    ${start_json}=    Parse Response JSON    ${start_resp}
+    Should Be Equal As Integers    ${start_json["ue_id"]}    ${ue_id}
+    Should Be Equal As Integers    ${start_json["bearer_id"]}    ${bearer_id}
+    ${stats_resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
+    Should Be Equal As Strings    ${stats_resp.status_code}    200
+    ${stats_json}=    Parse Response JSON    ${stats_resp}
+    Dictionary Should Contain Key    ${stats_json}    tx_bps
+    Dictionary Should Contain Key    ${stats_json}    rx_bps
+    ${stop_resp}=    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
+    Should Be Equal As Strings    ${stop_resp.status_code}    200
+    ${stop_json}=    Parse Response JSON    ${stop_resp}
+    Should Be Equal As Integers    ${stop_json["ue_id"]}    ${ue_id}
+    Should Be Equal As Integers    ${stop_json["bearer_id"]}    ${bearer_id}
+
+Verify Stats UE Count After Attach
+    [Arguments]    ${attach_count}    ${ue_id_start}
+    Create API Session
+    Reset Simulator State
+    FOR    ${i}    IN RANGE    ${attach_count}
+        ${ue_id}=    Evaluate    ${ue_id_start} + ${i}
+        Attach UE    ${ue_id}
+    END
+    ${resp}=    GET On Session    api    /ues/stats
+    Should Be Equal As Strings    ${resp.status_code}    200
+    ${json}=    Parse Response JSON    ${resp}
+    Should Be Equal As Integers    ${json["ue_count"]}    ${attach_count}
