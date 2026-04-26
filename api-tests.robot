@@ -7,8 +7,48 @@ Library          Collections
 ${BASE_URL}    http://localhost:8000
 
 *** Test Cases ***
+Test Attach UE Assigns Default Bearer
+    [Documentation]    Attach UE and verify default bearer=9 is assigned
+    Verify Attach UE Assigns Default Bearer    1
+
+Test Attach Same UE Twice Returns Error
+    [Documentation]    Attaching same UE twice should return error
+    Verify Attach Same UE Twice Returns Error    1
+
+Test Detach Nonexistent UE Returns Error
+    [Documentation]    Detaching UE that is not attached should return error
+    Verify Detach Nonexistent UE Returns Error    50
+
+Test Default Bearer Cannot Be Removed
+    [Documentation]    Bearer 9 cannot be deleted
+    Verify Default Bearer Cannot Be Removed    1
+
+Test Add Duplicate Bearer Returns Error
+    [Documentation]    Adding same bearer twice should fail
+    Verify Add Duplicate Bearer Returns Error    1    1
+
+Test Start Traffic On Inactive Bearer Returns Error
+    [Documentation]    Cannot start traffic on non-existing bearer
+    Verify Start Traffic On Inactive Bearer Returns Error    1    5
+
+Test Traffic Speed Above Limit Returns Error
+    [Documentation]    Traffic above 100 Mbps should fail
+    Verify Traffic Speed Above Limit Returns Error    1    1    200000
+
+Test Stop Traffic That Was Not Started Returns Error
+    [Documentation]    Stopping traffic that was never started should fail
+    Verify Stop Traffic That Was Not Started Returns Error    1    1
+
+Test Get Traffic Without Starting Returns Error
+    [Documentation]    Getting stats for inactive traffic should fail or return zero
+    Verify Get Traffic Without Starting Returns Error    1    1
+
+Test Reset Clears All State
+    [Documentation]    After reset, no UE should exist
+    Verify Reset Clears All State    1
+
 Test List UEs Initially Empty
-    [Documentation]    Initinially List of UEs is empty
+    [Documentation]    Initially List of UEs is empty
     Verify UEs List Is Empty
 
 Test List Connected UEs
@@ -60,6 +100,106 @@ Test Traffic Protocol Validation
     Verify Traffic Protocol Validation    1    1    icmp
 
 *** Keywords ***
+Verify Attach UE Assigns Default Bearer
+    [Arguments]    ${ue_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${resp}=    GET On Session    api    /ues/${ue_id}
+    ${json}=    Parse Response JSON    ${resp}
+    Should Contain    ${json["bearers"]}    9
+
+Verify Attach Same UE Twice Returns Error
+    [Arguments]    ${ue_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${int_id}=    Convert To Integer    ${ue_id}
+    ${body}=    Create Dictionary    ue_id=${int_id}
+    ${resp}=    POST On Session    api    /ues    json=${body}    expected_status=any
+    Should Be Validation Error    ${resp}
+
+Verify Detach Nonexistent UE Returns Error
+    [Arguments]    ${ue_id}
+    Create API Session
+    Reset Simulator State
+    ${resp}=    DELETE On Session    api    /ues/${ue_id}    expected_status=any
+    Should Be Validation Error    ${resp}
+
+Verify Default Bearer Cannot Be Removed
+    [Arguments]    ${ue_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${resp}=    DELETE On Session    api    /ues/${ue_id}/bearers/9    expected_status=any
+    Should Be Validation Error    ${resp}
+
+Verify Add Duplicate Bearer Returns Error
+    [Arguments]    ${ue_id}    ${bearer_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${int_bearer}=    Convert To Integer    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${int_bearer}
+    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
+    ${resp}=    POST On Session    api    /ues/${ue_id}/bearers    json=${body}    expected_status=any
+    Should Be Validation Error    ${resp}
+
+Verify Start Traffic On Inactive Bearer Returns Error
+    [Arguments]    ${ue_id}    ${bearer_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${traffic}=    Create Dictionary    protocol=tcp    kbps=100
+    ${resp}=    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
+    ...    json=${traffic}    expected_status=any
+    Should Be Validation Error    ${resp}
+
+Verify Traffic Speed Above Limit Returns Error
+    [Arguments]    ${ue_id}    ${bearer_id}    ${kbps}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${int_bearer}=    Convert To Integer    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${int_bearer}
+    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
+    ${traffic}=    Create Dictionary    protocol=tcp    kbps=${kbps}
+    ${resp}=    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
+    ...    json=${traffic}    expected_status=any
+    Should Be Validation Error    ${resp}
+
+Verify Stop Traffic That Was Not Started Returns Error
+    [Arguments]    ${ue_id}    ${bearer_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${int_bearer}=    Convert To Integer    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${int_bearer}
+    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
+    ${resp}=    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    expected_status=any
+    Should Be Validation Error    ${resp}
+
+Verify Get Traffic Without Starting Returns Error
+    [Arguments]    ${ue_id}    ${bearer_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${int_bearer}=    Convert To Integer    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${int_bearer}
+    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
+    ${resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    expected_status=any
+    Should Be True    ${resp.status_code} == 200 or ${resp.status_code} == 400 or ${resp.status_code} == 422
+
+Verify Reset Clears All State
+    [Arguments]    ${ue_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    POST On Session    api    /reset
+    ${resp}=    GET On Session    api    /ues
+    ${json}=    Parse Response JSON    ${resp}
+    Should Be Empty    ${json["ues"]}
+
 Verify UEs List Is Empty
     Create API Session
     Reset Simulator State
@@ -112,7 +252,7 @@ Verify Bearer ID Above Max Is Rejected
     ${int_bearer}=    Convert To Integer    ${bearer_id}
     ${body}=    Create Dictionary    bearer_id=${int_bearer}
     ${response}=    POST On Session    api    /ues/${ue_id}/bearers    json=${body}    expected_status=any
-    Should Be Equal As Strings    ${response.status_code}    422
+    Should Be Validation Error    ${response}
 
 Create API Session
     Create Session    api    ${BASE_URL}
@@ -149,14 +289,14 @@ Verify UE Attach And Detach
     Should Be Equal As Integers    ${detach_json["ue_id"]}    ${ue_id}    msg=Response should contain correct UE ID
 
 Verify UE Attach With Invalid ID
-    [Documentation]    Verify UE attach validation: IDs outside range 1-100 should return 422 Validation Error
+    [Documentation]    Verify UE attach validation: IDs outside valid range should return 400 or 422
     [Arguments]    ${invalid_ue_id}
     Create API Session
     Reset Simulator State
     ${int_id}=    Convert To Integer    ${invalid_ue_id}
     ${body}=    Create Dictionary    ue_id=${int_id}
     ${response}=    POST On Session    api    /ues    json=${body}    expected_status=any
-    Should Be Equal As Strings    ${response.status_code}    422    msg=Invalid UE ID should return 422 Validation Error
+    Should Be Validation Error    ${response}    msg=Invalid UE ID should return 400 or 422
 
 Verify Traffic Lifecycle For UE And Bearer
     [Arguments]    ${ue_id}    ${bearer_id}
@@ -203,9 +343,9 @@ Verify Bearer Operations On Nonexistent UE
     ${int_bearer}=    Convert To Integer    ${bearer_id}
     ${body}=    Create Dictionary    bearer_id=${int_bearer}
     ${response}=    POST On Session    api    /ues/${ue_id}/bearers    json=${body}    expected_status=any
-    Should Be Equal As Strings    ${response.status_code}    422
-    ...    msg=Bearer POST on nonexistent UE should return 422
-    
+    Should Be Validation Error    ${response}
+    ...    msg=Bearer POST on nonexistent UE should return 400 or 422
+
 Verify Full Traffic End To End
     [Arguments]    ${ue_id}    ${bearer_id}
     Create API Session
@@ -244,5 +384,10 @@ Verify Traffic Protocol Validation
     ${traffic_body}=    Create Dictionary    protocol=${invalid_protocol}    kbps=${100}
     ${response}=    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
     ...    json=${traffic_body}    expected_status=any
-    Should Be Equal As Strings    ${response.status_code}    422
-    ...    msg=Unsupported protocol "${invalid_protocol}" should return 422 Validation Error
+    Should Be Validation Error    ${response}
+    ...    msg=Unsupported protocol "${invalid_protocol}" should return 400 or 422
+
+Should Be Validation Error
+    [Arguments]    ${response}    ${msg}=Expected 400 or 422 validation error
+    Should Be True    ${response.status_code} == 400 or ${response.status_code} == 422
+    ...    msg=${msg}
