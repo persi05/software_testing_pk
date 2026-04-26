@@ -1,2 +1,2 @@
 # software_testing_pk
-testujemy oprogramowanie !!! jej
+Wymagania: Robot Framework + RequestsLibrary; Windows 10/11
