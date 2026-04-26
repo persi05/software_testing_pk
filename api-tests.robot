@@ -161,7 +161,7 @@ Test Traffic Protocol Validation
     Attach UE    1
     Add Bearer To UE    1    1
     Starting Traffic With Invalid Protocol Should Fail    1    1    icmp
-   
+
 Test Detach UE With Active Traffic Stops Traffic
     [Documentation]    Detaching UE with active traffic should automatically stop it
     Verify Detach UE Stops Traffic    1    5
@@ -372,16 +372,9 @@ Starting Traffic With Negative Speed Should Fail
 
 Stopping Unstarted Traffic Should Fail
     [Arguments]    ${ue_id}    ${bearer_id}
-    Create API Session
-    Reset Simulator State
-    Attach UE    ${ue_id}
-    ${body}=    Create Dictionary    bearer_id=${bearer_id}
-    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
-    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}
-    ${get_resp}=    GET On Session    api    /ues/${ue_id}
-    ${json}=    Parse Response JSON    ${get_resp}
-    Should Be True    "${bearer_id}" not in $json["bearers"]
-    
+    ${resp}=    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    expected_status=any
+    Should Be Validation Error    ${resp}    msg=Stopping traffic that was never started should return error
+
 Starting Traffic With Invalid Protocol Should Fail
     [Arguments]    ${ue_id}    ${bearer_id}    ${protocol}
     ${traffic}=    Create Dictionary    protocol=${protocol}    kbps=${100}
@@ -391,8 +384,6 @@ Starting Traffic With Invalid Protocol Should Fail
 
 Verify Detach UE Stops Traffic
     [Arguments]    ${ue_id}    ${bearer_id}
-    Create API Session
-    Reset Simulator State
     Attach UE    ${ue_id}
     ${int_bearer}=    Convert To Integer    ${bearer_id}
     ${body}=    Create Dictionary    bearer_id=${int_bearer}
@@ -401,16 +392,16 @@ Verify Detach UE Stops Traffic
     POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
     DELETE On Session    api    /ues/${ue_id}
     ${resp}=    GET On Session    api    /ues/stats
-    ${json}=    Parse Response JSON    ${resp}
+    ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Integers    ${json["bearer_count"]}    0
 
 Verify Detach UE Stops Multiple Traffic
     [Arguments]    ${ue_id}    ${bearer_1}    ${bearer_2}
-    Create API Session
-    Reset Simulator State
     Attach UE    ${ue_id}
-    ${b1}=    Create Dictionary    bearer_id=${bearer_1}
-    ${b2}=    Create Dictionary    bearer_id=${bearer_2}
+    ${int_b1}=    Convert To Integer    ${bearer_1}
+    ${int_b2}=    Convert To Integer    ${bearer_2}
+    ${b1}=    Create Dictionary    bearer_id=${int_b1}
+    ${b2}=    Create Dictionary    bearer_id=${int_b2}
     POST On Session    api    /ues/${ue_id}/bearers    json=${b1}
     POST On Session    api    /ues/${ue_id}/bearers    json=${b2}
     ${traffic}=    Create Dictionary    protocol=tcp    kbps=${100}
@@ -418,13 +409,11 @@ Verify Detach UE Stops Multiple Traffic
     POST On Session    api    /ues/${ue_id}/bearers/${bearer_2}/traffic    json=${traffic}
     DELETE On Session    api    /ues/${ue_id}
     ${resp}=    GET On Session    api    /ues/stats
-    ${json}=    Parse Response JSON    ${resp}
+    ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Integers    ${json["bearer_count"]}    0
 
 Verify Traffic Stats Reset
     [Arguments]    ${ue_id}    ${bearer_id}
-    Create API Session
-    Reset Simulator State
     Attach UE    ${ue_id}
     ${int_bearer}=    Convert To Integer    ${bearer_id}
     ${body}=    Create Dictionary    bearer_id=${int_bearer}
@@ -434,25 +423,23 @@ Verify Traffic Stats Reset
     DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
     POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
     ${resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
-    ${json}=    Parse Response JSON    ${resp}
+    ${json}=    Set Variable    ${resp.json()}
     Dictionary Should Contain Key    ${json}    tx_bps
 
 Verify Traffic Duration Resets
     [Arguments]    ${ue_id}    ${bearer_id}
-    Create API Session
-    Reset Simulator State
     Attach UE    ${ue_id}
     ${int_bearer}=    Convert To Integer    ${bearer_id}
     ${body}=    Create Dictionary    bearer_id=${int_bearer}
     POST On Session    api    /ues/${ue_id}/bearers    json=${body}
     ${traffic}=    Create Dictionary    protocol=tcp    kbps=${100}
     POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
-    Sleep    7s
+    Sleep    6s
     DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
+    Sleep    1s
     POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
     Sleep    1s
     ${resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
-    ${json}=    Parse Response JSON    ${resp}
-    Should Be True    ${json["duration"]} < 2    msg=Duration should reset after stop+start, but got ${json["duration"]}s (expected < 3s)
-    ${resp}=    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    expected_status=any
-    Should Be Validation Error    ${resp}    msg=Stopping traffic that was never started should return error
+    ${json}=    Set Variable    ${resp.json()}
+    Should Be True    ${json["duration"]} < 3    msg=Duration should reset after stop+start, but got ${json["duration"]}s (expected < 3s)
+    Stop Traffic    ${ue_id}    ${bearer_id}
