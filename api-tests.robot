@@ -35,6 +35,14 @@ Test Traffic Speed Above Limit Returns Error
     [Documentation]    Traffic above 100 Mbps should fail
     Verify Traffic Speed Above Limit Returns Error    1    1    200000
 
+Test Traffic Speed Normal 50 Mbps
+    [Documentation]    Traffic at 50 Mbps (50000 kbps) should work correctly
+    Verify Traffic Speed Valid    1    1    50000
+
+Test Traffic Speed Negative Returns Error
+    [Documentation]    Negative traffic speed should return error
+    Verify Traffic Speed Invalid    1    1    -10000
+
 Test Stop Traffic That Was Not Started Returns Error
     [Documentation]    Stopping traffic that was never started should fail
     Verify Stop Traffic That Was Not Started Returns Error    1    1
@@ -70,6 +78,10 @@ Test Attach And Detach UE
 Test Attach UE With ID of Minimum
     [Documentation]    Test UE attachment and detachment with minimum valid ID (0)
     Verify UE Attach And Detach    0
+
+Test Attach UE With ID of Maximum
+    [Documentation]    Test UE attachment and detachment with maximum valid ID (100)
+    Verify UE Attach And Detach    100
 
 Test Attach UE With ID Below Minimum
     [Documentation]    Test validation of UE ID below minimum (0)
@@ -394,6 +406,66 @@ Verify Traffic Protocol Validation
     ...    json=${traffic_body}    expected_status=any
     Should Be Validation Error    ${response}
     ...    msg=Unsupported protocol "${invalid_protocol}" should return 400 or 422
+
+Detach UE
+    [Arguments]    ${ue_id}
+    ${response}=    DELETE On Session    api    /ues/${ue_id}
+    RETURN    ${response}
+
+Start Traffic
+    [Arguments]    ${ue_id}    ${bearer_id}    ${protocol}    ${kbps}
+    ${traffic_body}=    Create Dictionary    protocol=${protocol}    kbps=${kbps}
+    ${response}=    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic_body}    expected_status=any
+    RETURN    ${response}
+
+Stop Traffic
+    [Arguments]    ${ue_id}    ${bearer_id}
+    ${response}=    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    expected_status=any
+    RETURN    ${response}
+
+Get Traffic Stats
+    [Arguments]    ${ue_id}    ${bearer_id}
+    ${response}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    expected_status=any
+    RETURN    ${response}
+
+Add Bearer To UE
+    [Arguments]    ${ue_id}    ${bearer_id}
+    ${int_bearer}=    Convert To Integer    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${int_bearer}
+    ${response}=    POST On Session    api    /ues/${ue_id}/bearers    json=${body}    expected_status=any
+    RETURN    ${response}
+
+Verify Traffic Speed Valid
+    [Arguments]    ${ue_id}    ${bearer_id}    ${kbps}
+    [Documentation]    Verify that traffic speed works correctly and returns proper stats
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    Add Bearer To UE    ${ue_id}    ${bearer_id}
+    ${start_resp}=    Start Traffic    ${ue_id}    ${bearer_id}    tcp    ${kbps}
+    Should Be Equal As Strings    ${start_resp.status_code}    200    msg=Start traffic at ${kbps} kbps should return 200 OK
+    Sleep    1s
+    ${stats_resp}=    Get Traffic Stats    ${ue_id}    ${bearer_id}
+    Should Be Equal As Strings    ${stats_resp.status_code}    200    msg=Get traffic stats should return 200 OK
+    ${stats_json}=    Parse Response JSON    ${stats_resp}
+    Dictionary Should Contain Key    ${stats_json}    tx_bps    msg=Response should contain tx_bps
+    Dictionary Should Contain Key    ${stats_json}    rx_bps    msg=Response should contain rx_bps
+    Dictionary Should Contain Key    ${stats_json}    duration    msg=Response should contain duration
+    Should Be True    ${stats_json["duration"]} > 0    msg=Duration should be greater than 0
+    Should Be True    ${stats_json["tx_bps"]} > 0    msg=TX BPS should be greater than 0
+    Should Be True    ${stats_json["rx_bps"]} > 0    msg=RX BPS should be greater than 0
+    ${stop_resp}=    Stop Traffic    ${ue_id}    ${bearer_id}
+    Should Be Equal As Strings    ${stop_resp.status_code}    200    msg=Stop traffic should return 200 OK
+
+Verify Traffic Speed Invalid
+    [Arguments]    ${ue_id}    ${bearer_id}    ${kbps}
+    [Documentation]    Verify that invalid traffic speed (negative, zero) returns error
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    Add Bearer To UE    ${ue_id}    ${bearer_id}
+    ${start_resp}=    Start Traffic    ${ue_id}    ${bearer_id}    tcp    ${kbps}
+    Should Be Validation Error    ${start_resp}    msg=Invalid traffic speed ${kbps} kbps should return 400 or 422
 
 Should Be Validation Error
     [Arguments]    ${response}    ${msg}=Expected 400 or 422 validation error
