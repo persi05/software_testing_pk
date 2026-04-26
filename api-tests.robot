@@ -178,6 +178,10 @@ Test Traffic Duration Resets After Stop And Restart
     [Documentation]    Duration should reset to 0 when traffic is restarted
     Verify Traffic Duration Resets    1    5
 
+Test Traffic Bytes Reset After Stop And Restart
+    [Documentation]    bytes_tx and bytes_rx should reset to 0 when traffic is restarted
+    Verify Traffic Bytes Reset    1    1
+
 *** Keywords ***
 
 # Session / Setup 
@@ -442,4 +446,27 @@ Verify Traffic Duration Resets
     ${resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
     ${json}=    Set Variable    ${resp.json()}
     Should Be True    ${json["duration"]} < 3    msg=Duration should reset after stop+start, but got ${json["duration"]}s (expected < 3s)
+    Stop Traffic    ${ue_id}    ${bearer_id}
+
+Verify Traffic Bytes Reset
+    [Arguments]    ${ue_id}    ${bearer_id}
+    Attach UE    ${ue_id}
+    ${int_bearer}=    Convert To Integer    ${bearer_id}
+    ${body}=    Create Dictionary    bearer_id=${int_bearer}
+    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
+    ${traffic}=    Create Dictionary    protocol=tcp    kbps=${10000}
+    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
+    Sleep    3s
+    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
+    Sleep    1s
+    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
+    Sleep    1s
+    ${resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
+    ${json}=    Set Variable    ${resp.json()}
+    ${ue_resp}=    GET On Session    api    /ues/${ue_id}
+    ${ue_json}=    Set Variable    ${ue_resp.json()}
+    ${bearer_key}=    Convert To String    ${bearer_id}
+    ${stats}=    Get From Dictionary    ${ue_json["stats"]}    ${bearer_key}
+    Should Be True    ${stats["bytes_tx"]} < 5000000
+    ...    msg=bytes_tx should reset after stop+restart, but got ${stats["bytes_tx"]} (expected close to 0)
     Stop Traffic    ${ue_id}    ${bearer_id}
