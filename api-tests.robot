@@ -99,6 +99,14 @@ Test Traffic Protocol Validation
     [Documentation]    Protocol "icmp" does not match ^(tcp|udp)$, expect 422
     Verify Traffic Protocol Validation    1    1    icmp
 
+Test Stop Traffic On Default Bearer Never Started Returns Error
+    [Documentation]    Stop traffic on default bearer 9 that has no running traffic
+    Verify Stop Traffic On Default Bearer Never Started    1
+
+Test Delete Bearer Removes It From State
+    [Documentation]    After deleting bearer, it should not appear in GET /ues/{ue_id}
+    Verify Delete Bearer Removes From State    1    3
+
 *** Keywords ***
 Verify Attach UE Assigns Default Bearer
     [Arguments]    ${ue_id}
@@ -391,3 +399,23 @@ Should Be Validation Error
     [Arguments]    ${response}    ${msg}=Expected 400 or 422 validation error
     Should Be True    ${response.status_code} == 400 or ${response.status_code} == 422
     ...    msg=${msg}
+
+Verify Stop Traffic On Default Bearer Never Started
+    [Arguments]    ${ue_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${resp}=    DELETE On Session    api    /ues/${ue_id}/bearers/9/traffic    expected_status=any
+    Should Be Equal As Strings    ${resp.status_code}    400    msg=Stopping traffic on default bearer that was never started should return 400: ${resp.status_code} != 400
+
+Verify Delete Bearer Removes From State
+    [Arguments]    ${ue_id}    ${bearer_id}
+    Create API Session
+    Reset Simulator State
+    Attach UE    ${ue_id}
+    ${body}=    Create Dictionary    bearer_id=${bearer_id}
+    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
+    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}
+    ${get_resp}=    GET On Session    api    /ues/${ue_id}
+    ${json}=    Parse Response JSON    ${get_resp}
+    Should Be True    "${bearer_id}" not in $json["bearers"]
