@@ -183,10 +183,7 @@ Test Traffic Duration Resets After Stop And Restart
 # Session / Setup 
 Create API Session
     Create Session    api    ${BASE_URL}
-    
-*** Keywords ***
-Verify Attach UE Assigns Default Bearer
-    [Arguments]    ${ue_id}
+
 Reset Simulator
     Create API Session
     POST On Session    api    /reset
