@@ -164,23 +164,63 @@ Test Traffic Protocol Validation
 
 Test Detach UE With Active Traffic Stops Traffic
     [Documentation]    Detaching UE with active traffic should automatically stop it
-    Verify Detach UE Stops Traffic    1    5
+    Attach UE    1
+    Add Bearer To UE    1    5
+    Start Traffic    1    5    tcp    1000
+    Sleep    1s
+    Detach UE    1
+    Traffic Should Be Stopped    1    5
 
 Test Detach UE With Multiple Active Bearers Stops All Traffic
     [Documentation]    Detaching UE should clean up all traffic tasks
-    Verify Detach UE Stops Multiple Traffic    1    2    3
+    Attach UE    1
+    Add Bearer To UE    1    2
+    Add Bearer To UE    1    3
+    Start Traffic    1    2    tcp    1000
+    Start Traffic    1    3    tcp    1000
+    Sleep    1s
+    Detach UE    1
+    Traffic Should Be Stopped    1    2
+    Traffic Should Be Stopped    1    3
 
 Test Traffic Stats Reset After Stop And Restart
     [Documentation]    Counters should clear upon restart
-    Verify Traffic Stats Reset    1    5
+    Attach UE    1
+    Add Bearer To UE    1    5
+    Start Traffic    1    5    tcp    1000
+    Sleep    2s
+    Stop Traffic    1    5
+    Sleep    1s
+    Start Traffic    1    5    tcp    1000
+    Sleep    1s
+    Traffic Should Have Stats After Restart    1    5
+    Stop Traffic    1    5
 
 Test Traffic Duration Resets After Stop And Restart
     [Documentation]    Duration should reset to 0 when traffic is restarted
-    Verify Traffic Duration Resets    1    5
+    Attach UE    1
+    Add Bearer To UE    1    5
+    Start Traffic    1    5    tcp    1000
+    Sleep    3s
+    Stop Traffic    1    5
+    Sleep    1s
+    Start Traffic    1    5    tcp    1000
+    Sleep    1s
+    Traffic Duration After Restart Should Be Below    1    5    3
+    Stop Traffic    1    5
 
 Test Traffic Bytes Reset After Stop And Restart
     [Documentation]    bytes_tx and bytes_rx should reset to 0 when traffic is restarted
-    Verify Traffic Bytes Reset    1    1
+    Attach UE    1
+    Add Bearer To UE    1    1
+    Start Traffic    1    1    tcp    10000
+    Sleep    3s
+    Stop Traffic    1    1
+    Sleep    1s
+    Start Traffic    1    1    tcp    10000
+    Sleep    1s
+    Traffic Bytes After Restart Should Be Below    1    1    2000000
+    Stop Traffic    1    1
 
 *** Keywords ***
 
@@ -287,6 +327,41 @@ Traffic Stats Should Be Available
     Dictionary Should Contain Key    ${json}    tx_bps
     Dictionary Should Contain Key    ${json}    rx_bps
 
+Traffic Should Be Stopped
+    [Arguments]    ${ue_id}    ${bearer_id}
+    ${resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    expected_status=any
+    Should Be True    ${resp.status_code} == 400 or ${resp.status_code} == 404 or ${resp.status_code} == 422
+    ...    msg=Traffic should be stopped (no active traffic), got ${resp.status_code}
+
+Stats Should Have Bearer Count
+    [Arguments]    ${expected_count}
+    ${resp}=    GET On Session    api    /ues/stats
+    ${json}=    Set Variable    ${resp.json()}
+    Should Be Equal As Integers    ${json["bearer_count"]}    ${expected_count}
+    ...    msg=Bearer count should be ${expected_count}, got ${json["bearer_count"]}
+
+Traffic Should Have Stats After Restart
+    [Arguments]    ${ue_id}    ${bearer_id}
+    ${resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
+    ${json}=    Set Variable    ${resp.json()}
+    Should Be True    ${json["tx_bps"]} >= 0    msg=Traffic stats should exist after restart
+
+Traffic Duration After Restart Should Be Below
+    [Arguments]    ${ue_id}    ${bearer_id}    ${max_duration}
+    ${resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
+    ${json}=    Set Variable    ${resp.json()}
+    Should Be True    ${json["duration"]} < ${max_duration}
+    ...    msg=Duration should be < ${max_duration}s after restart, but got ${json["duration"]}s
+
+Traffic Bytes After Restart Should Be Below
+    [Arguments]    ${ue_id}    ${bearer_id}    ${max_bytes}
+    ${ue_resp}=    GET On Session    api    /ues/${ue_id}
+    ${ue_json}=    Set Variable    ${ue_resp.json()}
+    ${bearer_key}=    Convert To String    ${bearer_id}
+    ${stats}=    Get From Dictionary    ${ue_json["stats"]}    ${bearer_key}
+    Should Be True    ${stats["bytes_tx"]} < ${max_bytes}
+    ...    msg=bytes_tx should be < ${max_bytes}, but got ${stats["bytes_tx"]} (expected reset after stop+restart)
+
 Traffic Should Have Nonzero Stats
     [Arguments]    ${ue_id}    ${bearer_id}
     ${resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
@@ -385,88 +460,3 @@ Starting Traffic With Invalid Protocol Should Fail
     ${resp}=    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
     ...    json=${traffic}    expected_status=any
     Should Be Validation Error    ${resp}    msg=Protocol "${protocol}" is not supported, should return 422
-
-Verify Detach UE Stops Traffic
-    [Arguments]    ${ue_id}    ${bearer_id}
-    Attach UE    ${ue_id}
-    ${int_bearer}=    Convert To Integer    ${bearer_id}
-    ${body}=    Create Dictionary    bearer_id=${int_bearer}
-    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
-    ${traffic}=    Create Dictionary    protocol=tcp    kbps=${100}
-    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
-    DELETE On Session    api    /ues/${ue_id}
-    ${resp}=    GET On Session    api    /ues/stats
-    ${json}=    Set Variable    ${resp.json()}
-    Should Be Equal As Integers    ${json["bearer_count"]}    0
-
-Verify Detach UE Stops Multiple Traffic
-    [Arguments]    ${ue_id}    ${bearer_1}    ${bearer_2}
-    Attach UE    ${ue_id}
-    ${int_b1}=    Convert To Integer    ${bearer_1}
-    ${int_b2}=    Convert To Integer    ${bearer_2}
-    ${b1}=    Create Dictionary    bearer_id=${int_b1}
-    ${b2}=    Create Dictionary    bearer_id=${int_b2}
-    POST On Session    api    /ues/${ue_id}/bearers    json=${b1}
-    POST On Session    api    /ues/${ue_id}/bearers    json=${b2}
-    ${traffic}=    Create Dictionary    protocol=tcp    kbps=${100}
-    POST On Session    api    /ues/${ue_id}/bearers/${bearer_1}/traffic    json=${traffic}
-    POST On Session    api    /ues/${ue_id}/bearers/${bearer_2}/traffic    json=${traffic}
-    DELETE On Session    api    /ues/${ue_id}
-    ${resp}=    GET On Session    api    /ues/stats
-    ${json}=    Set Variable    ${resp.json()}
-    Should Be Equal As Integers    ${json["bearer_count"]}    0
-
-Verify Traffic Stats Reset
-    [Arguments]    ${ue_id}    ${bearer_id}
-    Attach UE    ${ue_id}
-    ${int_bearer}=    Convert To Integer    ${bearer_id}
-    ${body}=    Create Dictionary    bearer_id=${int_bearer}
-    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
-    ${traffic}=    Create Dictionary    protocol=tcp    kbps=${100}
-    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
-    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
-    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
-    ${resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
-    ${json}=    Set Variable    ${resp.json()}
-    Dictionary Should Contain Key    ${json}    tx_bps
-
-Verify Traffic Duration Resets
-    [Arguments]    ${ue_id}    ${bearer_id}
-    Attach UE    ${ue_id}
-    ${int_bearer}=    Convert To Integer    ${bearer_id}
-    ${body}=    Create Dictionary    bearer_id=${int_bearer}
-    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
-    ${traffic}=    Create Dictionary    protocol=tcp    kbps=${100}
-    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
-    Sleep    6s
-    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
-    Sleep    1s
-    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
-    Sleep    1s
-    ${resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
-    ${json}=    Set Variable    ${resp.json()}
-    Should Be True    ${json["duration"]} < 3    msg=Duration should reset after stop+start, but got ${json["duration"]}s (expected < 3s)
-    Stop Traffic    ${ue_id}    ${bearer_id}
-
-Verify Traffic Bytes Reset
-    [Arguments]    ${ue_id}    ${bearer_id}
-    Attach UE    ${ue_id}
-    ${int_bearer}=    Convert To Integer    ${bearer_id}
-    ${body}=    Create Dictionary    bearer_id=${int_bearer}
-    POST On Session    api    /ues/${ue_id}/bearers    json=${body}
-    ${traffic}=    Create Dictionary    protocol=tcp    kbps=${10000}
-    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
-    Sleep    3s
-    DELETE On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
-    Sleep    1s
-    POST On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic    json=${traffic}
-    Sleep    1s
-    ${resp}=    GET On Session    api    /ues/${ue_id}/bearers/${bearer_id}/traffic
-    ${json}=    Set Variable    ${resp.json()}
-    ${ue_resp}=    GET On Session    api    /ues/${ue_id}
-    ${ue_json}=    Set Variable    ${ue_resp.json()}
-    ${bearer_key}=    Convert To String    ${bearer_id}
-    ${stats}=    Get From Dictionary    ${ue_json["stats"]}    ${bearer_key}
-    Should Be True    ${stats["bytes_tx"]} < 5000000
-    ...    msg=bytes_tx should reset after stop+restart, but got ${stats["bytes_tx"]} (expected close to 0)
-    Stop Traffic    ${ue_id}    ${bearer_id}
